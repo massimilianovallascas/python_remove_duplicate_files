@@ -16,7 +16,13 @@ def parse():
 
 def main():
     source, recursive, dry_run = parse()
-    print("Scanning folder: {}".format(source))
+
+    text = f"Scanning folder: {source}"
+    print(f"{text}\n{'=' * len(text)}")
+
+    if dry_run:
+        print("Running in dryrun mode")
+
     scan = Scan(source, recursive, dry_run)
     #scan.file_full_list()
     scan.check_duplicates()
@@ -26,7 +32,7 @@ def main():
 
 class Scan: 
 
-    def __init__(self, path, recursive=False, dry_run=True):
+    def __init__(self, path: str, recursive: bool = False, dry_run: bool = True):
         self.path = path
         self.recursive = recursive
         self.dry_run = dry_run
@@ -48,27 +54,42 @@ class Scan:
     
     def mark_to_keep(self):
         for k, v in self.duplicates.items():
-            print("- Checksum: {}".format(k))
+            choice: int = -1
+            print(f"\n*** Checksum: {k} ***")
             for index, file in enumerate(v):
-                print("{}: {}".format(index, file))
-            print("What file do you want to keep?")
-            choice = input("Index: ")
+                print(f"{index}: {file}")
+            index_range = range(len(v))
+            while int(choice) not in index_range:
+                choice = input(f"What file do you want to keep? {list(map(str, index_range))}: ")
+                try:
+                    int(choice)
+                except ValueError:
+                    choice = -1   
             del(self.duplicates[k][int(choice)])
 
     def delete(self):
+        print("\n")
         if len(self.duplicates) > 0:
-            if not self.dry_run:
-                print("*** WARNING")
-                print("*** The script is not running in dry-run mode")
-                print("*** Please make sure to backup your files before proceed")
-                choice = input("Do you want to proceed? [Y/n]: ")
+            remove_text = "Removing"
+            choice = str()
+            if self.dry_run:
+                text = "*** INFO: The script is running in dry-run mode, files won't be deleted"
+                print(f"{text}\n{'=' * len(text)}")
+                input("Press any key to continue...")
+                remove_text = f"(dry-run) - {remove_text}"
+            else:
+                text = "*** WARNING: The script is not running in dry-run mode. Please make sure to backup your files before proceeding"
+                print(f"{text}\n{'=' * len(text)}")
+                while choice.lower() not in ["y","n"]:
+                    choice = input("Do you want to proceed? [Y/n]: ")
+                    
                 if choice.lower() != "y":
                     sys.exit(1)
 
             for k, v in self.duplicates.items():
                 for file in v:
                     if os.path.exists(file.path):
-                        print("Removing {}".format(file.path))
+                        print(f"{remove_text} {file.path}")
                         os.remove(file.path)
         else:
             print("No duplicates found")
@@ -85,20 +106,22 @@ class Scan:
                 print(file.__repr__())
             
 class File:
-    def __init__(self, file):
-        md5_hash = hashlib.md5()
-        fh = open(file, "rb")
-        content = fh.read()
-        md5_hash.update(content)
-
+    def __init__(self, file: str):
         self.path = file
         self.name = pathlib.Path(file).name
         self.extension = pathlib.Path(file).suffix
         self.size = pathlib.Path(file).stat().st_size
-        self.checksum = md5_hash.hexdigest()
+        self.checksum = self._file_checksum()
 
-    def __repr__(self):
-        return "File(path={}, name={}, extension={}, size={}, checksum={})".format(self.path, self.name, self.extension, self.size, self.checksum)
+    def _file_checksum(self) -> str:
+        md5_hash = hashlib.md5()
+        fh = open(self.path, "rb")
+        content = fh.read()
+        md5_hash.update(content)
+        return md5_hash.hexdigest()
+
+    def __repr__(self) -> str:
+        return f"File(path={self.path}, checksum={self.checksum}, name={self.name}, extension={self.extension}, size={self.size})"
 
 if __name__ == "__main__":
     main()
