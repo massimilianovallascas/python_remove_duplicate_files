@@ -2,19 +2,22 @@ import argparse
 import hashlib
 import os
 import pathlib
+import sys
 
 def parse():
-    parser = argparse.ArgumentParser(description='File duplicates')
-    parser.add_argument("-s", "--source", default=pathlib.Path(__file__).resolve().parent, required=False, type=str, help='source folder')
-    parser.add_argument('--version', action='version', version='%(prog)s 1.0')
+    parser = argparse.ArgumentParser(description="Remove duplicate files")
+    parser.add_argument("-d", "--dryrun", default=False, required=False, action="store_true", help="dry run")
+    parser.add_argument("-r", "--recursive", default=False, required=False, action="store_true", help="recursive")
+    parser.add_argument("-s", "--source", default=pathlib.Path(__file__).resolve().parent, required=False, type=str, help="source folder")
+    parser.add_argument("--version", action="version", version="%(prog)s 1.0")
     args = parser.parse_args()
 
-    return pathlib.Path(args.source).resolve()
+    return pathlib.Path(args.source).resolve(), args.recursive, args.dryrun
 
 def main():
-    source = parse()
+    source, recursive, dry_run = parse()
     print("Scanning folder: {}".format(source))
-    scan = Scan(source)
+    scan = Scan(source, recursive, dry_run)
     #scan.file_full_list()
     scan.check_duplicates()
     scan.mark_to_keep()
@@ -23,14 +26,18 @@ def main():
 
 class Scan: 
 
-    def __init__(self, path):
+    def __init__(self, path, recursive=False, dry_run=True):
         self.path = path
+        self.recursive = recursive
+        self.dry_run = dry_run
         self.file_list = []
         self.duplicates = {}
         self._scan()
 
     def _scan(self):
-        self.file_list = [File(x) for x in pathlib.Path(self.path).iterdir() if x.is_file()]
+        pattern = "**/*" if self.recursive else "*"
+        files = pathlib.Path(self.path).glob(pattern)
+        self.file_list = [File(x) for x in files if x.is_file()]
    
     def check_duplicates(self):
         duplicates = {}
@@ -49,11 +56,22 @@ class Scan:
             del(self.duplicates[k][int(choice)])
 
     def delete(self):
-        for k, v in self.duplicates.items():
-            for file in v:
-                if os.path.exists(file.path):
-                    print("Removing {}".format(file.path))
-                    # os.remove(file.path)
+        if len(self.duplicates) > 0:
+            if not self.dry_run:
+                print("*** WARNING")
+                print("*** The script is not running in dry-run mode")
+                print("*** Please make sure to backup your files before proceed")
+                choice = input("Do you want to proceed? [Y/n]: ")
+                if choice.lower() != "y":
+                    sys.exit(1)
+
+            for k, v in self.duplicates.items():
+                for file in v:
+                    if os.path.exists(file.path):
+                        print("Removing {}".format(file.path))
+                        os.remove(file.path)
+        else:
+            print("No duplicates found")
 
     def file_full_list(self):
         print("Files full list:")
