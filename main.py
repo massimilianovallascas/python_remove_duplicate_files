@@ -4,6 +4,7 @@ import os
 import pathlib
 import sys
 
+
 def parse():
     parser = argparse.ArgumentParser(description="Remove duplicate files")
     parser.add_argument("-d", "--dryrun", default=False, required=False, action="store_true", help="dry run")
@@ -82,7 +83,7 @@ class Scan:
                 print(f"{text}\n{'=' * len(text)}")
                 while choice.lower() not in ["y","n"]:
                     choice = input("Do you want to proceed? [Y/n]: ")
-                    
+
                 if choice.lower() != "y":
                     sys.exit(1)
 
@@ -104,7 +105,8 @@ class Scan:
         for k, v in self.duplicates.items():
             for file in v:
                 print(file.__repr__())
-            
+
+
 class File:
     def __init__(self, file: str):
         self.path = file
@@ -117,11 +119,13 @@ class File:
         md5_hash = hashlib.md5()
         fh = open(self.path, "rb")
         content = fh.read()
+        fh.close()
         md5_hash.update(content)
         return md5_hash.hexdigest()
 
     def __repr__(self) -> str:
         return f"File(path={self.path}, checksum={self.checksum}, name={self.name}, extension={self.extension}, size={self.size})"
+
 
 if __name__ == "__main__":
     main()
