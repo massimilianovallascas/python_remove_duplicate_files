@@ -1,4 +1,3 @@
-import os
 import unittest
 
 from .test_common import *
@@ -9,7 +8,7 @@ class FileTestCase(CommonTestCase):
 
     def setUp(self):
         super().setUp()
-        self.file = [ File(os.path.join(self.path_files, file)) for file in self.test_files.keys() ]
+        self.file = [File(os.path.join(self.path_files, file)) for file in self.test_files.keys()]
 
     def test_file_checksum(self):
         for file in self.file:

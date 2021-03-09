@@ -15,6 +15,7 @@ def parse():
 
     return pathlib.Path(args.source).resolve(), args.recursive, args.dryrun
 
+
 def main():
     source, recursive, dry_run = parse()
 
@@ -25,11 +26,12 @@ def main():
         print("Running in dryrun mode")
 
     scan = Scan(source, recursive, dry_run)
-    #scan.file_full_list()
+    # scan.file_full_list()
     scan.check_duplicates()
     scan.mark_to_keep()
-    #scan.file_to_be_deleted_list()
+    # scan.file_to_be_deleted_list()
     scan.delete()
+
 
 class Scan: 
 
@@ -116,12 +118,11 @@ class File:
         self.checksum = self._file_checksum()
 
     def _file_checksum(self) -> str:
-        md5_hash = hashlib.md5()
         fh = open(self.path, "rb")
         content = fh.read()
         fh.close()
-        md5_hash.update(content)
-        return md5_hash.hexdigest()
+        file_hash = hashlib.md5(content)
+        return file_hash.hexdigest()
 
     def __repr__(self) -> str:
         return f"File(path={self.path}, checksum={self.checksum}, name={self.name}, extension={self.extension}, size={self.size})"

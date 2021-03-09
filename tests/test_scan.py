@@ -1,4 +1,3 @@
-import os
 import random
 import string
 import unittest
@@ -11,6 +10,11 @@ from main import *
 
 
 class ScanCommonTestCase(CommonTestCase):
+
+    recursive = False
+    dry_run = True
+    choice = "n"
+
     def setUp(self):
         super().setUp()
         if self.recursive:
@@ -56,31 +60,36 @@ class ScanCommonTestCase(CommonTestCase):
                     
                     self.assertFalse(os.path.isfile(file))
 
+
 class ScanDTestCase(ScanCommonTestCase):
     def setUp(self):
         self.recursive = False
         self.dry_run = True
         super().setUp()
 
+
 class ScanRDTestCase(ScanCommonTestCase):
-     def setUp(self):
+    def setUp(self):
         self.recursive = True
         self.dry_run = True
         super().setUp()
 
+
 class ScanRTestCase(ScanCommonTestCase):
-     def setUp(self):
+    def setUp(self):
         self.recursive = True
         self.dry_run = False
         self.choice = "n"
         super().setUp()
 
+
 class ScanTestCase(ScanCommonTestCase):
-     def setUp(self):
+    def setUp(self):
         self.recursive = False
         self.dry_run = False
         self.choice = "y"
         super().setUp()
+
 
 del(ScanCommonTestCase)
 
